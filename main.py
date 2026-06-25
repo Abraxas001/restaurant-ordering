@@ -1,0 +1,84 @@
+from fastapi import FastAPI, Depends, Request
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from database import get_db, engine
+from models import Base, MenuItem, Order, OrderItem
+
+app = FastAPI()
+Base.metadata.create_all(bind=engine)
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/menu")
+def get_menu(db: Session = Depends(get_db)):
+    items = db.query(MenuItem).all()
+    return items
+
+@app.get("/table/{table_number}")
+def table_menu(table_number: int, request: Request, db: Session = Depends(get_db)):
+    items = db.query(MenuItem).all()
+    return templates.TemplateResponse(
+    request=request,
+    name="menu.html",
+    context={
+        "items": items,
+        "table_number": table_number
+    }
+)
+
+@app.post("/order")
+def place_order(table_number: int, item_ids: str, quantities: str, db: Session = Depends(get_db)):
+    # item_ids and quantities are comma-separated strings e.g. "1,2,3" and "1,2,1"
+    order = Order(table_number=table_number, status="New")
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    ids = item_ids.split(",")
+    qtys = quantities.split(",")
+
+    for item_id, qty in zip(ids, qtys):
+        order_item = OrderItem(
+            order_id=order.id,
+            menu_item_id=int(item_id),
+            quantity=int(qty)
+        )
+        db.add(order_item)
+
+    db.commit()
+    return {"message": "Order placed!", "order_id": order.id}
+
+@app.get("/orders")
+def get_orders(db: Session = Depends(get_db)):
+    orders = db.query(Order).all()
+    return orders
+
+@app.get("/admin")
+def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    
+    order_details = []
+    for order in orders:
+        items = db.query(OrderItem, MenuItem).join(
+            MenuItem, OrderItem.menu_item_id == MenuItem.id
+        ).filter(OrderItem.order_id == order.id).all()
+        
+        order_details.append({
+        "order": order,
+        "time": order.created_at.strftime('%I:%M %p') if order.created_at else "N/A",
+        "order_items": items  # renamed from "items" to "order_items"
+    })
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={"order_details": order_details}
+    )
+
+@app.post("/order/{order_id}/status")
+def update_order_status(order_id: int, status: str, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        return {"error": "Order not found"}
+    order.status = status
+    db.commit()
+    return {"message": "Status updated", "order_id": order_id, "status": status}

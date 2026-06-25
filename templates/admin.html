@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 24px; color: #ff6b35; font-size: 28px; }
+
+        .stats { display: flex; gap: 16px; margin-bottom: 24px; justify-content: center; }
+        .stat-box { background: #16213e; padding: 16px 32px; border-radius: 10px; text-align: center; }
+        .stat-box .number { font-size: 32px; font-weight: bold; color: #ff6b35; }
+        .stat-box .label { font-size: 13px; color: #aaa; margin-top: 4px; }
+
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+        .order-card { background: #16213e; border-radius: 12px; padding: 16px; border-left: 5px solid #ff6b35; }
+        .order-card.preparing { border-left-color: #f39c12; }
+        .order-card.ready { border-left-color: #2ecc71; }
+        .order-card.delivered { border-left-color: #555; opacity: 0.6; }
+
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .order-id { font-size: 18px; font-weight: bold; }
+        .table-badge { background: #ff6b35; color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px; }
+
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 12px; }
+        .status-New { background: #e74c3c; color: white; }
+        .status-Preparing { background: #f39c12; color: white; }
+        .status-Ready { background: #2ecc71; color: white; }
+        .status-Delivered { background: #555; color: white; }
+
+        .order-items { margin-bottom: 16px; }
+        .order-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #ffffff15; font-size: 14px; }
+        .order-item:last-child { border-bottom: none; }
+        .item-qty { color: #ff6b35; font-weight: bold; }
+
+        .order-time { font-size: 12px; color: #888; margin-bottom: 12px; }
+
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-accept { background: #e74c3c; color: white; }
+        .btn-preparing { background: #f39c12; color: white; }
+        .btn-ready { background: #2ecc71; color: white; }
+        .btn-delivered { background: #555; color: white; }
+
+        .no-orders { text-align: center; color: #888; margin-top: 60px; font-size: 18px; }
+
+        .refresh-bar { text-align: center; margin-bottom: 20px; color: #888; font-size: 13px; }
+        .refresh-bar span { color: #ff6b35; }
+    </style>
+</head>
+<body>
+
+<h1>🍳 Kitchen Dashboard</h1>
+
+<!-- Stats -->
+<div class="stats">
+    <div class="stat-box">
+        <div class="number" id="count-new">0</div>
+        <div class="label">New Orders</div>
+    </div>
+    <div class="stat-box">
+        <div class="number" id="count-preparing">0</div>
+        <div class="label">Preparing</div>
+    </div>
+    <div class="stat-box">
+        <div class="number" id="count-ready">0</div>
+        <div class="label">Ready</div>
+    </div>
+</div>
+
+<div class="refresh-bar">Auto-refreshing every <span>15 seconds</span></div>
+
+<!-- Orders -->
+<div class="orders-grid" id="orders-container">
+    {% if order_details %}
+        {% for detail in order_details %}
+        {% set order = detail.order %}
+        {% set status_lower = order.status | lower %}
+
+        <div class="order-card {{ status_lower }}" id="card-{{ order.id }}">
+            <div class="order-header">
+                <span class="order-id">Order #{{ order.id }}</span>
+                <span class="table-badge">Table {{ order.table_number }}</span>
+            </div>
+
+            <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+
+            <div class="order-time">{{ detail.time }}</div>
+
+            <div class="order-items">
+                {% for order_item, menu_item in detail.order_items %}
+                <div class="order-item">
+                    <span>{{ menu_item.name }}</span>
+                    <span class="item-qty">x{{ order_item.quantity }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="action-buttons">
+                {% if order.status == 'New' %}
+                    <button class="btn btn-preparing" onclick="updateStatus({{ order.id }}, 'Preparing')">👨‍🍳 Preparing</button>
+                {% elif order.status == 'Preparing' %}
+                    <button class="btn btn-ready" onclick="updateStatus({{ order.id }}, 'Ready')">✅ Mark Ready</button>
+                {% elif order.status == 'Ready' %}
+                    <button class="btn btn-delivered" onclick="updateStatus({{ order.id }}, 'Delivered')">🚀 Delivered</button>
+                {% else %}
+                    <span style="color:#555; font-size:13px;">✓ Completed</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-orders" style="grid-column: 1/-1;">
+            🎉 No orders yet. Waiting for customers...
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Update order status
+    async function updateStatus(orderId, status) {
+        const res = await fetch(`/order/${orderId}/status?status=${status}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            location.reload();
+        }
+    }
+
+    // Count orders by status
+    function updateStats() {
+        const cards = document.querySelectorAll('.order-card');
+        let newCount = 0, preparingCount = 0, readyCount = 0;
+        cards.forEach(card => {
+            if (card.classList.contains('new')) newCount++;
+            if (card.classList.contains('preparing')) preparingCount++;
+            if (card.classList.contains('ready')) readyCount++;
+        });
+        document.getElementById('count-new').textContent = newCount;
+        document.getElementById('count-preparing').textContent = preparingCount;
+        document.getElementById('count-ready').textContent = readyCount;
+    }
+
+    updateStats();
+
+    // Auto refresh every 15 seconds
+    setTimeout(() => location.reload(), 15000);
+</script>
+
+</body>
+</html>
