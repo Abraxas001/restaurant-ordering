@@ -8,6 +8,10 @@ app = FastAPI()
 Base.metadata.create_all(bind=engine)
 templates = Jinja2Templates(directory="templates")
 
+@app.get("/")
+def read_root():
+    return {"message": "Restaurant API is up and running!"}
+
 @app.get("/menu")
 def get_menu(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
