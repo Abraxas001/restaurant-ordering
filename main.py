@@ -1,3 +1,4 @@
+from database import get_db, engine, SessionLocal
 from fastapi import FastAPI, Depends, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -7,6 +8,27 @@ from datetime import date, datetime
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
+
+# Auto-seed menu items if table is empty
+def seed_menu():
+    db = SessionLocal()
+    try:
+        count = db.query(MenuItem).count()
+        if count == 0:
+            items = [
+                MenuItem(name="Burger", category="Main Course", price=250),
+                MenuItem(name="Pizza", category="Main Course", price=450),
+                MenuItem(name="Cold Coffee", category="Beverage", price=180),
+                MenuItem(name="French Fries", category="Snacks", price=150),
+            ]
+            for item in items:
+                db.add(item)
+            db.commit()
+            print("Menu seeded successfully!")
+    finally:
+        db.close()
+
+seed_menu()
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
