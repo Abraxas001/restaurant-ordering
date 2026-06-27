@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 36px 28px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .emoji { font-size: 56px; margin-bottom: 12px; }
+        h1 { font-size: 24px; color: #333; margin-bottom: 6px; }
+        .table-tag {
+            display: inline-block;
+            background: #ff6b35;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-bottom: 28px;
+        }
+        .field { margin-bottom: 16px; text-align: left; }
+        .field label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: bold; }
+        .field input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .field input:focus { border-color: #ff6b35; }
+        .btn-start {
+            width: 100%;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .btn-start:hover { background: #e55a25; }
+        .note { font-size: 12px; color: #aaa; margin-top: 16px; }
+        .error { color: #e74c3c; font-size: 13px; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="emoji">🍽️</div>
+    <h1>Welcome!</h1>
+    <div class="table-tag">Table {{ table_number }}</div>
+
+    <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="name" placeholder="e.g. Rahul" autocomplete="name">
+    </div>
+
+    <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" placeholder="e.g. 9876543210" maxlength="10" autocomplete="tel">
+    </div>
+
+    <p class="error" id="error-msg">Please enter your name and a valid 10-digit phone number.</p>
+
+    <button class="btn-start" onclick="proceed()">View Menu →</button>
+
+    <p class="note">Your details help us serve you better 🙏</p>
+</div>
+
+<script>
+    function proceed() {
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const error = document.getElementById('error-msg');
+
+        if (!name || phone.length !== 10 || isNaN(phone)) {
+            error.style.display = 'block';
+            return;
+        }
+
+        error.style.display = 'none';
+        window.location.href = `/menu/{{ table_number }}?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`;
+    }
+
+    // Allow pressing Enter to proceed
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') proceed();
+    });
+</script>
+</body>
+</html>
