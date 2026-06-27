@@ -1,8 +1,7 @@
-from database import get_db, engine, SessionLocal
 from fastapi import FastAPI, Depends, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from database import get_db, engine
+from database import get_db, engine, SessionLocal
 from models import Base, MenuItem, Order, OrderItem
 from datetime import date, datetime
 
@@ -40,17 +39,29 @@ def get_menu(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
     return items
 
+# Landing page — collect name and phone
 @app.get("/table/{table_number}")
-def table_menu(table_number: int, request: Request, db: Session = Depends(get_db)):
+def table_landing(table_number: int, request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={"table_number": table_number}
+    )
+
+# Menu page — after name and phone submitted
+@app.get("/menu/{table_number}")
+def table_menu(table_number: int, name: str, phone: str, request: Request, db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
     return templates.TemplateResponse(
-    request=request,
-    name="menu.html",
-    context={
-        "items": items,
-        "table_number": table_number
-    }
-)
+        request=request,
+        name="menu.html",
+        context={
+            "items": items,
+            "table_number": table_number,
+            "customer_name": name,
+            "customer_phone": phone
+        }
+    )
 
 @app.post("/order")
 def place_order(
@@ -92,21 +103,17 @@ def get_orders(db: Session = Depends(get_db)):
 
 @app.get("/admin")
 def admin_dashboard(request: Request, filter_date: str = None, db: Session = Depends(get_db)):
-    # Default to today if no date provided
     if not filter_date:
         filter_date = date.today().isoformat()
-    
+
     selected_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
-    
-    # Get all unique dates that have orders
+
     all_orders_dates = db.query(Order.created_at).all()
     unique_dates = sorted(set(o.created_at.date() for o in all_orders_dates if o.created_at), reverse=True)
-    
-    # Ensure today is always in the list
+
     if date.today() not in unique_dates:
         unique_dates.insert(0, date.today())
 
-    # Filter orders by selected date
     orders = db.query(Order).filter(
         Order.created_at >= datetime.combine(selected_date, datetime.min.time()),
         Order.created_at <= datetime.combine(selected_date, datetime.max.time())
@@ -158,24 +165,6 @@ def add_menu_item(
 @app.post("/admin/menu/edit/{item_id}")
 def edit_menu_item(
     item_id: int,
-    price: float,
-    db: Session = Depends(get_db)
-):
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
-    if not item:
-        return {"error": "Item not found"}
-    item.price = price
-    db.commit()
-    return {"message": "Price updated"}
-
-@app.get("/admin/menu")
-def get_menu_items(db: Session = Depends(get_db)):
-    items = db.query(MenuItem).all()
-    return items
-
-@app.post("/admin/menu/edit/{item_id}")
-def edit_menu_item(
-    item_id: int,
     name: str,
     category: str,
     price: float,
@@ -190,24 +179,7 @@ def edit_menu_item(
     db.commit()
     return {"message": "Item updated"}
 
-@app.get("/table/{table_number}")
-def table_landing(table_number: int, request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="landing.html",
-        context={"table_number": table_number}
-    )
-
-@app.get("/menu/{table_number}")
-def table_menu(table_number: int, name: str, phone: str, request: Request, db: Session = Depends(get_db)):
+@app.get("/admin/menu")
+def get_menu_items(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
-    return templates.TemplateResponse(
-        request=request,
-        name="menu.html",
-        context={
-            "items": items,
-            "table_number": table_number,
-            "customer_name": name,
-            "customer_phone": phone
-        }
-    )
+    return items
