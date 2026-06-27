@@ -15,6 +15,8 @@ class Order(Base):
     table_number = Column(Integer)
     status = Column(String, default="New")
     created_at = Column(DateTime, default=datetime.utcnow)
+    customer_name = Column(String, nullable=True)
+    customer_phone = Column(String, nullable=True)
 
 class OrderItem(Base):
     __tablename__ = "order_items"
