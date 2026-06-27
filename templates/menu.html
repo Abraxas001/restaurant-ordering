@@ -128,9 +128,10 @@
         for (const [id, qty] of Object.entries(cart)) {
             if (qty > 0) { itemIds.push(id); quantities.push(qty); }
         }
-        const res = await fetch(`/order?table_number=${tableNumber}&item_ids=${itemIds.join(",")}&quantities=${quantities.join(",")}`, {
-            method: "POST"
-        });
+        const res = await fetch(
+            `/order?table_number=${tableNumber}&item_ids=${itemIds.join(",")}&quantities=${quantities.join(",")}&customer_name=${encodeURIComponent("{{ customer_name }}")}&customer_phone=${encodeURIComponent("{{ customer_phone }}")}`,
+            { method: "POST" }
+        );
         if (res.ok) {
             document.getElementById("confirm-page").style.display = "none";
             document.getElementById("success-page").style.display = "block";
