@@ -229,7 +229,17 @@
         document.getElementById('count-ready').textContent = r;
     }
     updateStats();
-    setTimeout(() => location.reload(), 15000);
+    function startAutoRefresh() {
+        setTimeout(() => {
+            const menuTab = document.getElementById('tab-menu');
+            if (menuTab.style.display === 'none') {
+                location.reload();
+            } else {
+                startAutoRefresh(); // check again in 15s without reloading
+            }
+        }, 15000);
+    }
+    startAutoRefresh();
 
     // Load menu items
     async function loadMenuItems() {
