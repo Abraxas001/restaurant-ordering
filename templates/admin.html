@@ -285,9 +285,20 @@
     }
 
     // Save price
-    async function savePrice(itemId) {
+    async function saveItem(itemId) {
+        const name = document.getElementById(`name-${itemId}`).value.trim();
+        const category = document.getElementById(`cat-${itemId}`).value.trim();
         const price = document.getElementById(`price-${itemId}`).value;
-        const res = await fetch(`/admin/menu/edit/${itemId}?price=${price}`, { method: 'POST' });
+    
+        if (!name || !category || !price) {
+            alert('Please fill all fields!');
+            return;
+        }
+    
+        const res = await fetch(
+            `/admin/menu/edit/${itemId}?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`,
+            { method: 'POST' }
+        );
         if (res.ok) {
             const msg = document.getElementById(`saved-${itemId}`);
             msg.style.display = 'inline';
