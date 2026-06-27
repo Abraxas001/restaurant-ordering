@@ -242,14 +242,16 @@
         }
         list.innerHTML = items.map(item => `
             <div class="menu-row">
-                <div class="menu-item-info">
-                    <span class="menu-item-name">${item.name}</span>
-                    <span class="menu-item-cat">${item.category}</span>
-                </div>
-                <div class="price-edit">
-                    <span style="color:#888;">₹</span>
-                    <input class="price-input" type="number" value="${item.price}" id="price-${item.id}">
-                    <button class="btn-save" onclick="savePrice(${item.id})">Save</button>
+                <div class="price-edit" style="flex-direction:column; align-items:flex-start; gap:8px; width:100%;">
+                    <div style="display:flex; gap:8px; width:100%; flex-wrap:wrap;">
+                        <input class="price-input" style="flex:2; min-width:120px;" type="text" 
+                               value="${item.name}" id="name-${item.id}" placeholder="Item name">
+                        <input class="price-input" style="flex:1; min-width:100px;" type="text" 
+                               value="${item.category}" id="cat-${item.id}" placeholder="Category">
+                        <input class="price-input" style="width:90px;" type="number" 
+                               value="${item.price}" id="price-${item.id}" placeholder="Price">
+                        <button class="btn-save" onclick="saveItem(${item.id})">Save</button>
+                    </div>
                     <span class="saved-msg" id="saved-${item.id}">✓ Saved</span>
                 </div>
             </div>
