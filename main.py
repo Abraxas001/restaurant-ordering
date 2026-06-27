@@ -3,6 +3,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db, engine
 from models import Base, MenuItem, Order, OrderItem
+from datetime import date, datetime
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -57,25 +58,47 @@ def get_orders(db: Session = Depends(get_db)):
     return orders
 
 @app.get("/admin")
-def admin_dashboard(request: Request, db: Session = Depends(get_db)):
-    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+def admin_dashboard(request: Request, filter_date: str = None, db: Session = Depends(get_db)):
+    # Default to today if no date provided
+    if not filter_date:
+        filter_date = date.today().isoformat()
     
+    selected_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
+    
+    # Get all unique dates that have orders
+    all_orders_dates = db.query(Order.created_at).all()
+    unique_dates = sorted(set(o.created_at.date() for o in all_orders_dates if o.created_at), reverse=True)
+    
+    # Ensure today is always in the list
+    if date.today() not in unique_dates:
+        unique_dates.insert(0, date.today())
+
+    # Filter orders by selected date
+    orders = db.query(Order).filter(
+        Order.created_at >= datetime.combine(selected_date, datetime.min.time()),
+        Order.created_at <= datetime.combine(selected_date, datetime.max.time())
+    ).order_by(Order.created_at.desc()).all()
+
     order_details = []
     for order in orders:
         items = db.query(OrderItem, MenuItem).join(
             MenuItem, OrderItem.menu_item_id == MenuItem.id
         ).filter(OrderItem.order_id == order.id).all()
-        
+
         order_details.append({
-        "order": order,
-        "time": order.created_at.strftime('%I:%M %p') if order.created_at else "N/A",
-        "order_items": items  # renamed from "items" to "order_items"
-    })
-    
+            "order": order,
+            "time": order.created_at.strftime('%I:%M %p') if order.created_at else "N/A",
+            "order_items": items
+        })
+
     return templates.TemplateResponse(
         request=request,
         name="admin.html",
-        context={"order_details": order_details}
+        context={
+            "order_details": order_details,
+            "unique_dates": unique_dates,
+            "selected_date": selected_date.isoformat()
+        }
     )
 
 @app.post("/order/{order_id}/status")
