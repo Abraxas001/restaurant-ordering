@@ -31,9 +31,20 @@ def table_menu(table_number: int, request: Request, db: Session = Depends(get_db
 )
 
 @app.post("/order")
-def place_order(table_number: int, item_ids: str, quantities: str, db: Session = Depends(get_db)):
-    # item_ids and quantities are comma-separated strings e.g. "1,2,3" and "1,2,1"
-    order = Order(table_number=table_number, status="New")
+def place_order(
+    table_number: int,
+    item_ids: str,
+    quantities: str,
+    customer_name: str = "",
+    customer_phone: str = "",
+    db: Session = Depends(get_db)
+):
+    order = Order(
+        table_number=table_number,
+        status="New",
+        customer_name=customer_name,
+        customer_phone=customer_phone
+    )
     db.add(order)
     db.commit()
     db.refresh(order)
@@ -156,3 +167,25 @@ def edit_menu_item(
     item.price = price
     db.commit()
     return {"message": "Item updated"}
+
+@app.get("/table/{table_number}")
+def table_landing(table_number: int, request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={"table_number": table_number}
+    )
+
+@app.get("/menu/{table_number}")
+def table_menu(table_number: int, name: str, phone: str, request: Request, db: Session = Depends(get_db)):
+    items = db.query(MenuItem).all()
+    return templates.TemplateResponse(
+        request=request,
+        name="menu.html",
+        context={
+            "items": items,
+            "table_number": table_number,
+            "customer_name": name,
+            "customer_phone": phone
+        }
+    )
