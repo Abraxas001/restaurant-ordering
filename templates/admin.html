@@ -9,13 +9,24 @@
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
         h1 { text-align: center; margin-bottom: 24px; color: #ff6b35; font-size: 28px; }
 
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+        .tab { padding: 10px 28px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold;
+               background: #16213e; color: #aaa; border: 2px solid transparent; }
+        .tab.active { background: #ff6b35; color: white; border-color: #ff6b35; }
+
+        /* Orders Tab */
+        .date-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; justify-content: center; }
+        .date-bar label { color: #aaa; font-size: 14px; }
+        .date-bar select { background: #16213e; color: #eee; border: 1px solid #ff6b35;
+                           padding: 8px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
         .stats { display: flex; gap: 16px; margin-bottom: 24px; justify-content: center; }
         .stat-box { background: #16213e; padding: 16px 32px; border-radius: 10px; text-align: center; }
         .stat-box .number { font-size: 32px; font-weight: bold; color: #ff6b35; }
         .stat-box .label { font-size: 13px; color: #aaa; margin-top: 4px; }
 
         .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-
         .order-card { background: #16213e; border-radius: 12px; padding: 16px; border-left: 5px solid #ff6b35; }
         .order-card.preparing { border-left-color: #f39c12; }
         .order-card.ready { border-left-color: #2ecc71; }
@@ -24,7 +35,6 @@
         .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .order-id { font-size: 18px; font-weight: bold; }
         .table-badge { background: #ff6b35; color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px; }
-
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 12px; }
         .status-New { background: #e74c3c; color: white; }
         .status-Preparing { background: #f39c12; color: white; }
@@ -32,122 +42,256 @@
         .status-Delivered { background: #555; color: white; }
 
         .order-items { margin-bottom: 16px; }
-        .order-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #ffffff15; font-size: 14px; }
+        .order-item { display: flex; justify-content: space-between; padding: 6px 0;
+                      border-bottom: 1px solid #ffffff15; font-size: 14px; }
         .order-item:last-child { border-bottom: none; }
         .item-qty { color: #ff6b35; font-weight: bold; }
-
         .order-time { font-size: 12px; color: #888; margin-bottom: 12px; }
 
         .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .btn-accept { background: #e74c3c; color: white; }
         .btn-preparing { background: #f39c12; color: white; }
         .btn-ready { background: #2ecc71; color: white; }
         .btn-delivered { background: #555; color: white; }
 
-        .no-orders { text-align: center; color: #888; margin-top: 60px; font-size: 18px; }
-
+        .no-orders { text-align: center; color: #888; margin-top: 60px; font-size: 18px; grid-column: 1/-1; }
         .refresh-bar { text-align: center; margin-bottom: 20px; color: #888; font-size: 13px; }
         .refresh-bar span { color: #ff6b35; }
+
+        /* Menu Tab */
+        .menu-section { max-width: 700px; margin: 0 auto; }
+        .menu-section h2 { color: #ff6b35; margin-bottom: 16px; font-size: 20px; }
+
+        .add-form { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .form-row input, .form-row select {
+            flex: 1; min-width: 120px; background: #0f3460; color: #eee;
+            border: 1px solid #ff6b35; padding: 10px; border-radius: 8px; font-size: 14px;
+        }
+        .form-row input::placeholder { color: #888; }
+        .btn-add { background: #ff6b35; color: white; border: none; padding: 10px 24px;
+                   border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; }
+
+        .menu-list { background: #16213e; border-radius: 12px; overflow: hidden; }
+        .menu-row { display: flex; justify-content: space-between; align-items: center;
+                    padding: 14px 16px; border-bottom: 1px solid #ffffff10; }
+        .menu-row:last-child { border-bottom: none; }
+        .menu-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .menu-item-name { font-size: 15px; font-weight: bold; }
+        .menu-item-cat { font-size: 12px; color: #888; }
+        .price-edit { display: flex; align-items: center; gap: 8px; }
+        .price-input { background: #0f3460; color: #eee; border: 1px solid #555;
+                       padding: 6px 10px; border-radius: 6px; width: 90px; font-size: 14px; }
+        .btn-save { background: #2ecc71; color: white; border: none; padding: 6px 14px;
+                    border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .saved-msg { color: #2ecc71; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
 
-<h1>🍳 Kitchen Dashboard</h1>
+<h1>🍳 Restaurant Admin</h1>
 
-<!-- Stats -->
-<div class="stats">
-    <div class="stat-box">
-        <div class="number" id="count-new">0</div>
-        <div class="label">New Orders</div>
+<!-- Tabs -->
+<div class="tabs">
+    <div class="tab active" onclick="showTab('orders')">📋 Orders</div>
+    <div class="tab" onclick="showTab('menu')">🍽️ Menu Management</div>
+</div>
+
+<!-- ORDERS TAB -->
+<div id="tab-orders">
+    <!-- Date Filter -->
+    <div class="date-bar">
+        <label>📅 Show orders for:</label>
+        <select onchange="filterByDate(this.value)">
+            {% for d in unique_dates %}
+            <option value="{{ d }}" {% if d|string == selected_date %}selected{% endif %}>
+                {{ d }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
-    <div class="stat-box">
-        <div class="number" id="count-preparing">0</div>
-        <div class="label">Preparing</div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-box">
+            <div class="number" id="count-new">0</div>
+            <div class="label">New Orders</div>
+        </div>
+        <div class="stat-box">
+            <div class="number" id="count-preparing">0</div>
+            <div class="label">Preparing</div>
+        </div>
+        <div class="stat-box">
+            <div class="number" id="count-ready">0</div>
+            <div class="label">Ready</div>
+        </div>
     </div>
-    <div class="stat-box">
-        <div class="number" id="count-ready">0</div>
-        <div class="label">Ready</div>
+
+    <div class="refresh-bar">Auto-refreshing every <span>15 seconds</span></div>
+
+    <div class="orders-grid" id="orders-container">
+        {% if order_details %}
+            {% for detail in order_details %}
+            {% set order = detail.order %}
+            {% set status_lower = order.status | lower %}
+
+            <div class="order-card {{ status_lower }}">
+                <div class="order-header">
+                    <span class="order-id">Order #{{ order.id }}</span>
+                    <span class="table-badge">Table {{ order.table_number }}</span>
+                </div>
+                <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+                <div class="order-time">🕐 {{ detail.time }}</div>
+                <div class="order-items">
+                    {% for order_item, menu_item in detail.order_items %}
+                    <div class="order-item">
+                        <span>{{ menu_item.name }}</span>
+                        <span class="item-qty">x{{ order_item.quantity }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="action-buttons">
+                    {% if order.status == 'New' %}
+                        <button class="btn btn-preparing" onclick="updateStatus({{ order.id }}, 'Preparing')">👨‍🍳 Preparing</button>
+                    {% elif order.status == 'Preparing' %}
+                        <button class="btn btn-ready" onclick="updateStatus({{ order.id }}, 'Ready')">✅ Mark Ready</button>
+                    {% elif order.status == 'Ready' %}
+                        <button class="btn btn-delivered" onclick="updateStatus({{ order.id }}, 'Delivered')">🚀 Delivered</button>
+                    {% else %}
+                        <span style="color:#555; font-size:13px;">✓ Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-orders">🎉 No orders for this date.</div>
+        {% endif %}
     </div>
 </div>
 
-<div class="refresh-bar">Auto-refreshing every <span>15 seconds</span></div>
+<!-- MENU TAB -->
+<div id="tab-menu" style="display:none;">
+    <div class="menu-section">
 
-<!-- Orders -->
-<div class="orders-grid" id="orders-container">
-    {% if order_details %}
-        {% for detail in order_details %}
-        {% set order = detail.order %}
-        {% set status_lower = order.status | lower %}
-
-        <div class="order-card {{ status_lower }}" id="card-{{ order.id }}">
-            <div class="order-header">
-                <span class="order-id">Order #{{ order.id }}</span>
-                <span class="table-badge">Table {{ order.table_number }}</span>
+        <!-- Add New Item -->
+        <h2>➕ Add New Item</h2>
+        <div class="add-form">
+            <div class="form-row">
+                <input type="text" id="new-name" placeholder="Item name (e.g. Paneer Tikka)">
+                <input type="text" id="new-category" placeholder="Category (e.g. Snacks)">
+                <input type="number" id="new-price" placeholder="Price (₹)">
             </div>
-
-            <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
-
-            <div class="order-time">{{ detail.time }}</div>
-
-            <div class="order-items">
-                {% for order_item, menu_item in detail.order_items %}
-                <div class="order-item">
-                    <span>{{ menu_item.name }}</span>
-                    <span class="item-qty">x{{ order_item.quantity }}</span>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="action-buttons">
-                {% if order.status == 'New' %}
-                    <button class="btn btn-preparing" onclick="updateStatus({{ order.id }}, 'Preparing')">👨‍🍳 Preparing</button>
-                {% elif order.status == 'Preparing' %}
-                    <button class="btn btn-ready" onclick="updateStatus({{ order.id }}, 'Ready')">✅ Mark Ready</button>
-                {% elif order.status == 'Ready' %}
-                    <button class="btn btn-delivered" onclick="updateStatus({{ order.id }}, 'Delivered')">🚀 Delivered</button>
-                {% else %}
-                    <span style="color:#555; font-size:13px;">✓ Completed</span>
-                {% endif %}
-            </div>
+            <button class="btn-add" onclick="addMenuItem()">Add to Menu</button>
+            <p id="add-msg" style="color:#2ecc71; margin-top:8px; display:none;">✅ Item added!</p>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="no-orders" style="grid-column: 1/-1;">
-            🎉 No orders yet. Waiting for customers...
+
+        <!-- Edit Existing Items -->
+        <h2>✏️ Edit Prices</h2>
+        <div class="menu-list" id="menu-list">
+            <div style="padding:16px; color:#888;">Loading menu...</div>
         </div>
-    {% endif %}
+    </div>
 </div>
 
 <script>
-    // Update order status
+    // Tab switching
+    function showTab(tab) {
+        document.getElementById('tab-orders').style.display = tab === 'orders' ? 'block' : 'none';
+        document.getElementById('tab-menu').style.display = tab === 'menu' ? 'block' : 'none';
+        document.querySelectorAll('.tab').forEach((t, i) => {
+            t.classList.toggle('active', (tab === 'orders' && i === 0) || (tab === 'menu' && i === 1));
+        });
+        if (tab === 'menu') loadMenuItems();
+    }
+
+    // Date filter
+    function filterByDate(dateVal) {
+        window.location.href = `/admin?filter_date=${dateVal}`;
+    }
+
+    // Order status update
     async function updateStatus(orderId, status) {
-        const res = await fetch(`/order/${orderId}/status?status=${status}`, {
+        const res = await fetch(`/order/${orderId}/status?status=${status}`, { method: 'POST' });
+        if (res.ok) location.reload();
+    }
+
+    // Stats counter
+    function updateStats() {
+        const cards = document.querySelectorAll('.order-card');
+        let n = 0, p = 0, r = 0;
+        cards.forEach(card => {
+            if (card.classList.contains('new')) n++;
+            if (card.classList.contains('preparing')) p++;
+            if (card.classList.contains('ready')) r++;
+        });
+        document.getElementById('count-new').textContent = n;
+        document.getElementById('count-preparing').textContent = p;
+        document.getElementById('count-ready').textContent = r;
+    }
+    updateStats();
+    setTimeout(() => location.reload(), 15000);
+
+    // Load menu items
+    async function loadMenuItems() {
+        const res = await fetch('/admin/menu');
+        const items = await res.json();
+        const list = document.getElementById('menu-list');
+        if (items.length === 0) {
+            list.innerHTML = '<div style="padding:16px;color:#888;">No items yet.</div>';
+            return;
+        }
+        list.innerHTML = items.map(item => `
+            <div class="menu-row">
+                <div class="menu-item-info">
+                    <span class="menu-item-name">${item.name}</span>
+                    <span class="menu-item-cat">${item.category}</span>
+                </div>
+                <div class="price-edit">
+                    <span style="color:#888;">₹</span>
+                    <input class="price-input" type="number" value="${item.price}" id="price-${item.id}">
+                    <button class="btn-save" onclick="savePrice(${item.id})">Save</button>
+                    <span class="saved-msg" id="saved-${item.id}">✓ Saved</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Add menu item
+    async function addMenuItem() {
+        const name = document.getElementById('new-name').value.trim();
+        const category = document.getElementById('new-category').value.trim();
+        const price = document.getElementById('new-price').value;
+
+        if (!name || !category || !price) {
+            alert('Please fill all fields!');
+            return;
+        }
+
+        const res = await fetch(`/admin/menu/add?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`, {
             method: 'POST'
         });
+
         if (res.ok) {
-            location.reload();
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-category').value = '';
+            document.getElementById('new-price').value = '';
+            const msg = document.getElementById('add-msg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+            loadMenuItems();
         }
     }
 
-    // Count orders by status
-    function updateStats() {
-        const cards = document.querySelectorAll('.order-card');
-        let newCount = 0, preparingCount = 0, readyCount = 0;
-        cards.forEach(card => {
-            if (card.classList.contains('new')) newCount++;
-            if (card.classList.contains('preparing')) preparingCount++;
-            if (card.classList.contains('ready')) readyCount++;
-        });
-        document.getElementById('count-new').textContent = newCount;
-        document.getElementById('count-preparing').textContent = preparingCount;
-        document.getElementById('count-ready').textContent = readyCount;
+    // Save price
+    async function savePrice(itemId) {
+        const price = document.getElementById(`price-${itemId}`).value;
+        const res = await fetch(`/admin/menu/edit/${itemId}?price=${price}`, { method: 'POST' });
+        if (res.ok) {
+            const msg = document.getElementById(`saved-${itemId}`);
+            msg.style.display = 'inline';
+            setTimeout(() => msg.style.display = 'none', 2000);
+        }
     }
-
-    updateStats();
-
-    // Auto refresh every 15 seconds
-    setTimeout(() => location.reload(), 15000);
 </script>
 
 </body>
