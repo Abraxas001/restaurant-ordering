@@ -139,3 +139,20 @@ def edit_menu_item(
 def get_menu_items(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
     return items
+
+@app.post("/admin/menu/edit/{item_id}")
+def edit_menu_item(
+    item_id: int,
+    name: str,
+    category: str,
+    price: float,
+    db: Session = Depends(get_db)
+):
+    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    if not item:
+        return {"error": "Item not found"}
+    item.name = name
+    item.category = category
+    item.price = price
+    db.commit()
+    return {"message": "Item updated"}
