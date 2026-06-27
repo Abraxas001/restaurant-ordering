@@ -8,6 +8,28 @@ from datetime import date, datetime
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
+# Migrate: add missing columns if they don't exist
+from sqlalchemy import text
+def run_migrations():
+    with engine.connect() as conn:
+        # Check and add customer_name
+        try:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN customer_name VARCHAR"))
+            conn.commit()
+            print("Added customer_name column")
+        except Exception:
+            pass  # Column already exists
+
+        # Check and add customer_phone
+        try:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN customer_phone VARCHAR"))
+            conn.commit()
+            print("Added customer_phone column")
+        except Exception:
+            pass  # Column already exists
+
+run_migrations()
+
 # Auto-seed menu items if table is empty
 def seed_menu():
     db = SessionLocal()
