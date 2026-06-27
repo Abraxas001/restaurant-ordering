@@ -142,6 +142,11 @@
                 </div>
                 <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
                 <div class="order-time">🕐 {{ detail.time }}</div>
+                {% if detail.order.customer_name %}
+                <div style="font-size:13px; color:#aaa; margin-bottom:8px;">
+                    👤 {{ detail.order.customer_name }} &nbsp;|&nbsp; 📱 {{ detail.order.customer_phone }}
+                </div>
+                {% endif %}
                 <div class="order-items">
                     {% for order_item, menu_item in detail.order_items %}
                     <div class="order-item">
