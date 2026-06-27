@@ -109,3 +109,33 @@ def update_order_status(order_id: int, status: str, db: Session = Depends(get_db
     order.status = status
     db.commit()
     return {"message": "Status updated", "order_id": order_id, "status": status}
+
+@app.post("/admin/menu/add")
+def add_menu_item(
+    name: str,
+    category: str,
+    price: float,
+    db: Session = Depends(get_db)
+):
+    item = MenuItem(name=name, category=category, price=price)
+    db.add(item)
+    db.commit()
+    return {"message": "Item added"}
+
+@app.post("/admin/menu/edit/{item_id}")
+def edit_menu_item(
+    item_id: int,
+    price: float,
+    db: Session = Depends(get_db)
+):
+    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    if not item:
+        return {"error": "Item not found"}
+    item.price = price
+    db.commit()
+    return {"message": "Price updated"}
+
+@app.get("/admin/menu")
+def get_menu_items(db: Session = Depends(get_db)):
+    items = db.query(MenuItem).all()
+    return items
