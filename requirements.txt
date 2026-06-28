@@ -19,6 +19,7 @@ httpx==0.28.1
 idna==3.18
 Jinja2==3.1.6
 libsql-client==0.3.1
+psycopg2-binary==2.9.9
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
