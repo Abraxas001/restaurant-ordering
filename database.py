@@ -2,19 +2,13 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Always use SQLite — Turso approach wasn't compatible
-# We'll use a fixed path so data persists on Render
-DATABASE_URL = "sqlite:////opt/render/project/src/restaurant.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./restaurant.db")
 
-# Fallback for local development
-if not os.path.exists("/opt/render"):
-    DATABASE_URL = "sqlite:///./restaurant.db"
+# Fix for SQLAlchemy compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
-
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
