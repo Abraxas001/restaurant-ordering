@@ -5,6 +5,11 @@ from database import get_db, engine, SessionLocal
 from models import Base, MenuItem, Order, OrderItem
 from datetime import date, datetime
 import os
+from fastapi.responses import RedirectResponse
+from fastapi import Form, Cookie
+from typing import Optional
+import hashlib
+import secrets
 
 print("DATABASE URL:", os.environ.get("TURSO_URL", "NOT FOUND"))
 
