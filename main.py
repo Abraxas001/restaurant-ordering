@@ -60,6 +60,20 @@ def seed_menu():
 seed_menu()
 templates = Jinja2Templates(directory="templates")
 
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+
+# Store active sessions in memory
+active_sessions = set()
+
+def create_session():
+    token = secrets.token_hex(32)
+    active_sessions.add(token)
+    return token
+
+def is_valid_session(token: str) -> bool:
+    return token in active_sessions
+
 @app.get("/")
 def read_root():
     return {"message": "Restaurant API is up and running!"}
@@ -132,7 +146,16 @@ def get_orders(db: Session = Depends(get_db)):
     return orders
 
 @app.get("/admin")
-def admin_dashboard(request: Request, filter_date: str = None, db: Session = Depends(get_db)):
+def admin_dashboard(
+    request: Request,
+    filter_date: str = None,
+    admin_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    # Check authentication
+    if not admin_token or not is_valid_session(admin_token):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
     if not filter_date:
         filter_date = date.today().isoformat()
 
@@ -172,7 +195,15 @@ def admin_dashboard(request: Request, filter_date: str = None, db: Session = Dep
     )
 
 @app.post("/order/{order_id}/status")
-def update_order_status(order_id: int, status: str, db: Session = Depends(get_db)):
+def update_order_status(
+    order_id: int,
+    status: str,
+    admin_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    if not admin_token or not is_valid_session(admin_token):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         return {"error": "Order not found"}
@@ -185,8 +216,12 @@ def add_menu_item(
     name: str,
     category: str,
     price: float,
+    admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
+    if not admin_token or not is_valid_session(admin_token):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    
     item = MenuItem(name=name, category=category, price=price)
     db.add(item)
     db.commit()
@@ -198,8 +233,12 @@ def edit_menu_item(
     name: str,
     category: str,
     price: float,
+    admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
+    if not admin_token or not is_valid_session(admin_token):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    
     item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
     if not item:
         return {"error": "Item not found"}
@@ -213,3 +252,36 @@ def edit_menu_item(
 def get_menu_items(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
     return items
+
+@app.get("/admin/login")
+def login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"error": None}
+    )
+
+@app.post("/admin/login")
+def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        token = create_session()
+        response = RedirectResponse(url="/admin", status_code=302)
+        response.set_cookie(key="admin_token", value=token, httponly=True)
+        return response
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"error": "Invalid username or password"}
+    )
+
+@app.get("/admin/logout")
+def logout(admin_token: Optional[str] = Cookie(None)):
+    if admin_token in active_sessions:
+        active_sessions.discard(admin_token)
+    response = RedirectResponse(url="/admin/login", status_code=302)
+    response.delete_cookie("admin_token")
+    return response
