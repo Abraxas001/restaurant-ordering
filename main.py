@@ -89,19 +89,15 @@ def seed_menu():
 seed_menu()
 templates = Jinja2Templates(directory="templates")
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+active_sessions = {}  # token -> restaurant_id
 
-# Store active sessions in memory
-active_sessions = set()
-
-def create_session():
+def create_session(restaurant_id: int):
     token = secrets.token_hex(32)
-    active_sessions.add(token)
+    active_sessions[token] = restaurant_id
     return token
 
-def is_valid_session(token: str) -> bool:
-    return token in active_sessions
+def get_session_restaurant_id(token: str):
+    return active_sessions.get(token)
 
 @app.get("/")
 def read_root():
@@ -200,29 +196,35 @@ def get_orders(db: Session = Depends(get_db)):
     orders = db.query(Order).all()
     return orders
 
-@app.get("/admin")
+@app.get("/r/{slug}/admin")
 def admin_dashboard(
+    slug: str,
     request: Request,
     filter_date: str = None,
     admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
-    # Check authentication
-    if not admin_token or not is_valid_session(admin_token):
-        return RedirectResponse(url="/admin/login", status_code=302)
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if not restaurant:
+        return {"error": "Restaurant not found"}
+
+    restaurant_id = get_session_restaurant_id(admin_token) if admin_token else None
+    if not restaurant_id or restaurant_id != restaurant.id:
+        return RedirectResponse(url=f"/r/{slug}/admin/login", status_code=302)
 
     if not filter_date:
         filter_date = date.today().isoformat()
 
     selected_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
 
-    all_orders_dates = db.query(Order.created_at).all()
+    all_orders_dates = db.query(Order.created_at).filter(Order.restaurant_id == restaurant.id).all()
     unique_dates = sorted(set(o.created_at.date() for o in all_orders_dates if o.created_at), reverse=True)
 
     if date.today() not in unique_dates:
         unique_dates.insert(0, date.today())
 
     orders = db.query(Order).filter(
+        Order.restaurant_id == restaurant.id,
         Order.created_at >= datetime.combine(selected_date, datetime.min.time()),
         Order.created_at <= datetime.combine(selected_date, datetime.max.time())
     ).order_by(Order.created_at.desc()).all()
@@ -245,45 +247,54 @@ def admin_dashboard(
         context={
             "order_details": order_details,
             "unique_dates": unique_dates,
-            "selected_date": selected_date.isoformat()
+            "selected_date": selected_date.isoformat(),
+            "slug": slug,
+            "restaurant_name": restaurant.name
         }
     )
 
-@app.post("/order/{order_id}/status")
+@app.post("/r/{slug}/order/{order_id}/status")
 def update_order_status(
+    slug: str,
     order_id: int,
     status: str,
     admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
-    if not admin_token or not is_valid_session(admin_token):
-        return RedirectResponse(url="/admin/login", status_code=302)
-    
-    order = db.query(Order).filter(Order.id == order_id).first()
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    restaurant_id = get_session_restaurant_id(admin_token) if admin_token else None
+    if not restaurant or not restaurant_id or restaurant_id != restaurant.id:
+        return {"error": "Unauthorized"}
+
+    order = db.query(Order).filter(Order.id == order_id, Order.restaurant_id == restaurant.id).first()
     if not order:
         return {"error": "Order not found"}
     order.status = status
     db.commit()
-    return {"message": "Status updated", "order_id": order_id, "status": status}
+    return {"message": "Status updated"}
 
-@app.post("/admin/menu/add")
+@app.post("/r/{slug}/admin/menu/add")
 def add_menu_item(
+    slug: str,
     name: str,
     category: str,
     price: float,
     admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
-    if not admin_token or not is_valid_session(admin_token):
-        return RedirectResponse(url="/admin/login", status_code=302)
-    
-    item = MenuItem(name=name, category=category, price=price)
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    restaurant_id = get_session_restaurant_id(admin_token) if admin_token else None
+    if not restaurant or not restaurant_id or restaurant_id != restaurant.id:
+        return {"error": "Unauthorized"}
+
+    item = MenuItem(restaurant_id=restaurant.id, name=name, category=category, price=price)
     db.add(item)
     db.commit()
     return {"message": "Item added"}
 
-@app.post("/admin/menu/edit/{item_id}")
+@app.post("/r/{slug}/admin/menu/edit/{item_id}")
 def edit_menu_item(
+    slug: str,
     item_id: int,
     name: str,
     category: str,
@@ -291,10 +302,12 @@ def edit_menu_item(
     admin_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
-    if not admin_token or not is_valid_session(admin_token):
-        return RedirectResponse(url="/admin/login", status_code=302)
-    
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    restaurant_id = get_session_restaurant_id(admin_token) if admin_token else None
+    if not restaurant or not restaurant_id or restaurant_id != restaurant.id:
+        return {"error": "Unauthorized"}
+
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.restaurant_id == restaurant.id).first()
     if not item:
         return {"error": "Item not found"}
     item.name = name
@@ -303,40 +316,53 @@ def edit_menu_item(
     db.commit()
     return {"message": "Item updated"}
 
-@app.get("/admin/menu")
-def get_menu_items(db: Session = Depends(get_db)):
-    items = db.query(MenuItem).all()
+@app.get("/r/{slug}/admin/menu")
+def get_menu_items(slug: str, db: Session = Depends(get_db)):
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if not restaurant:
+        return []
+    items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).all()
     return items
 
-@app.get("/admin/login")
-def login_page(request: Request):
+@app.get("/r/{slug}/admin/login")
+def login_page(slug: str, request: Request):
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"error": None}
+        context={"error": None, "slug": slug}
     )
 
-@app.post("/admin/login")
+@app.post("/r/{slug}/admin/login")
 def login(
+    slug: str,
     request: Request,
     username: str = Form(...),
-    password: str = Form(...)
+    password: str = Form(...),
+    db: Session = Depends(get_db)
 ):
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-        token = create_session()
-        response = RedirectResponse(url="/admin", status_code=302)
+    restaurant = db.query(Restaurant).filter(
+        Restaurant.slug == slug,
+        Restaurant.username == username,
+        Restaurant.password == password
+    ).first()
+
+    if restaurant:
+        token = create_session(restaurant.id)
+        response = RedirectResponse(url=f"/r/{slug}/admin", status_code=302)
         response.set_cookie(key="admin_token", value=token, httponly=True)
         return response
+
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"error": "Invalid username or password"}
+        context={"error": "Invalid username or password", "slug": slug}
     )
 
-@app.get("/admin/logout")
-def logout(admin_token: Optional[str] = Cookie(None)):
+@app.get("/r/{slug}/admin/logout")
+def logout(slug: str, admin_token: Optional[str] = Cookie(None)):
     if admin_token in active_sessions:
-        active_sessions.discard(admin_token)
-    response = RedirectResponse(url="/admin/login", status_code=302)
+        del active_sessions[admin_token]
+    response = RedirectResponse(url=f"/r/{slug}/admin/login", status_code=302)
     response.delete_cookie("admin_token")
     return response
+
