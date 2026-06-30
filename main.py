@@ -156,8 +156,9 @@ def table_menu(
         }
     )
 
-@app.post("/order")
+@app.post("/r/{slug}/order")
 def place_order(
+    slug: str,
     table_number: int,
     item_ids: str,
     quantities: str,
@@ -165,7 +166,12 @@ def place_order(
     customer_phone: str = "",
     db: Session = Depends(get_db)
 ):
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if not restaurant:
+        return {"error": "Restaurant not found"}
+
     order = Order(
+        restaurant_id=restaurant.id,
         table_number=table_number,
         status="New",
         customer_name=customer_name,
