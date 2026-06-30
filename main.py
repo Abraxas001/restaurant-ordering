@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db, engine, SessionLocal
-from models import Base, MenuItem, Order, OrderItem
+from models import Base, MenuItem, Order, OrderItem, Restaurant
 from datetime import date, datetime
 import os
 from fastapi.responses import RedirectResponse
@@ -18,23 +18,49 @@ Base.metadata.create_all(bind=engine)
 
 # Migrate: add missing columns if they don't exist
 from sqlalchemy import text
-def run_migrations():
-    with engine.connect() as conn:
-        # Check and add customer_name
-        try:
-            conn.execute(text("ALTER TABLE orders ADD COLUMN customer_name VARCHAR"))
-            conn.commit()
-            print("Added customer_name column")
-        except Exception:
-            pass  # Column already exists
 
-        # Check and add customer_phone
+Base.metadata.create_all(bind=engine)
+def run_migrations():
+    db = SessionLocal()
+    try:
+        # Step 1: Add restaurant_id column to menu_items if missing
         try:
-            conn.execute(text("ALTER TABLE orders ADD COLUMN customer_phone VARCHAR"))
-            conn.commit()
-            print("Added customer_phone column")
+            db.execute(text("ALTER TABLE menu_items ADD COLUMN restaurant_id INTEGER"))
+            db.commit()
+            print("Added restaurant_id to menu_items")
         except Exception:
-            pass  # Column already exists
+            db.rollback()
+
+        # Step 2: Add restaurant_id column to orders if missing
+        try:
+            db.execute(text("ALTER TABLE orders ADD COLUMN restaurant_id INTEGER"))
+            db.commit()
+            print("Added restaurant_id to orders")
+        except Exception:
+            db.rollback()
+
+        # Step 3: Create a default restaurant for existing data (only if none exists)
+        existing_restaurant = db.query(Restaurant).first()
+        if not existing_restaurant:
+            default_restaurant = Restaurant(
+                name="My Restaurant",
+                slug="my-restaurant",
+                username="admin",
+                password=ADMIN_PASSWORD  # reuse your existing admin password
+            )
+            db.add(default_restaurant)
+            db.commit()
+            db.refresh(default_restaurant)
+            print(f"Created default restaurant with id {default_restaurant.id}")
+
+            # Step 4: Backfill existing menu items and orders with this restaurant_id
+            db.execute(text(f"UPDATE menu_items SET restaurant_id = {default_restaurant.id} WHERE restaurant_id IS NULL"))
+            db.execute(text(f"UPDATE orders SET restaurant_id = {default_restaurant.id} WHERE restaurant_id IS NULL"))
+            db.commit()
+            print("Backfilled existing data with default restaurant_id")
+
+    finally:
+        db.close()
 
 run_migrations()
 
