@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #0f0c29; color: #eee; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        h1 { color: #9d4edd; font-size: 26px; }
+        .logout-link { color: #888; font-size: 13px; text-decoration: none; }
+
+        .summary { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+        .summary-box { background: #16213e; padding: 16px 28px; border-radius: 12px; text-align: center; }
+        .summary-box .number { font-size: 28px; font-weight: bold; color: #9d4edd; }
+        .summary-box .label { font-size: 12px; color: #888; margin-top: 4px; }
+
+        .add-form { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 28px; max-width: 700px; }
+        .add-form h2 { color: #9d4edd; font-size: 18px; margin-bottom: 14px; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .form-row input {
+            flex: 1; min-width: 140px; background: #0f3460; color: #eee;
+            border: 1px solid #9d4edd; padding: 10px; border-radius: 8px; font-size: 14px;
+        }
+        .btn-add {
+            background: #9d4edd; color: white; border: none; padding: 10px 24px;
+            border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%;
+        }
+
+        .restaurant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .restaurant-card {
+            background: #16213e; border-radius: 12px; padding: 18px;
+            border-left: 4px solid #9d4edd;
+        }
+        .restaurant-name { font-size: 17px; font-weight: bold; margin-bottom: 4px; }
+        .restaurant-slug { font-size: 12px; color: #888; margin-bottom: 14px; }
+        .restaurant-stats { display: flex; gap: 16px; margin-bottom: 14px; }
+        .stat { text-align: center; }
+        .stat .num { font-size: 18px; font-weight: bold; color: #9d4edd; }
+        .stat .lbl { font-size: 11px; color: #888; }
+        .restaurant-actions { display: flex; gap: 8px; }
+        .btn-link {
+            flex: 1; text-align: center; padding: 8px; border-radius: 8px;
+            font-size: 13px; text-decoration: none; font-weight: bold;
+        }
+        .btn-admin { background: #ff6b35; color: white; }
+        .btn-customer { background: #0f3460; color: #9d4edd; border: 1px solid #9d4edd; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>👑 Super Admin Dashboard</h1>
+    <a href="/superadmin/logout" class="logout-link">Logout →</a>
+</div>
+
+<div class="summary">
+    <div class="summary-box">
+        <div class="number">{{ restaurant_stats|length }}</div>
+        <div class="label">Total Restaurants</div>
+    </div>
+    <div class="summary-box">
+        <div class="number">{{ restaurant_stats|sum(attribute='total_orders') }}</div>
+        <div class="label">Total Orders (All Time)</div>
+    </div>
+    <div class="summary-box">
+        <div class="number">{{ restaurant_stats|sum(attribute='today_orders') }}</div>
+        <div class="label">Orders Today</div>
+    </div>
+</div>
+
+<div class="add-form">
+    <h2>➕ Add New Restaurant</h2>
+    <form method="POST" action="/superadmin/add-restaurant">
+        <div class="form-row">
+            <input type="text" name="name" placeholder="Restaurant name" required>
+            <input type="text" name="slug" placeholder="URL slug (e.g. spice-garden)" required>
+        </div>
+        <div class="form-row">
+            <input type="text" name="username" placeholder="Admin username" required>
+            <input type="password" name="password" placeholder="Admin password" required>
+        </div>
+        <button type="submit" class="btn-add">Create Restaurant</button>
+    </form>
+</div>
+
+<div class="restaurant-grid">
+    {% for stat in restaurant_stats %}
+    <div class="restaurant-card">
+        <div class="restaurant-name">{{ stat.restaurant.name }}</div>
+        <div class="restaurant-slug">/r/{{ stat.restaurant.slug }}</div>
+        <div class="restaurant-stats">
+            <div class="stat">
+                <div class="num">{{ stat.today_orders }}</div>
+                <div class="lbl">Today</div>
+            </div>
+            <div class="stat">
+                <div class="num">{{ stat.total_orders }}</div>
+                <div class="lbl">Total Orders</div>
+            </div>
+            <div class="stat">
+                <div class="num">{{ stat.menu_count }}</div>
+                <div class="lbl">Menu Items</div>
+            </div>
+        </div>
+        <div class="restaurant-actions">
+            <a href="/r/{{ stat.restaurant.slug }}/admin" class="btn-link btn-admin" target="_blank">Admin →</a>
+            <a href="/r/{{ stat.restaurant.slug }}/table/1" class="btn-link btn-customer" target="_blank">View Menu →</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
