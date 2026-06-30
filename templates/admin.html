@@ -91,7 +91,7 @@
 
 <h1>🍳 Restaurant Admin</h1>
 <div style="text-align:right; margin-bottom: 16px;">
-    <a href="/admin/logout" style="color:#888; font-size:13px; text-decoration:none;">Logout →</a>
+    <a href="/r/{{ slug }}/admin/logout" style="color:#888; font-size:13px; text-decoration:none;">Logout →</a>
 </div>
 
 <!-- Tabs -->
@@ -213,13 +213,14 @@
     }
 
     // Date filter
+    const slug = "{{ slug }}";
     function filterByDate(dateVal) {
-        window.location.href = `/admin?filter_date=${dateVal}`;
+        window.location.href = `/r/${slug}/admin?filter_date=${dateVal}`;
     }
 
     // Order status update
     async function updateStatus(orderId, status) {
-        const res = await fetch(`/order/${orderId}/status?status=${status}`, { method: 'POST' });
+        const res = await fetch(`/r/${slug}/order/${orderId}/status?status=${status}`, { method: 'POST' });
         if (res.ok) location.reload();
     }
 
@@ -251,7 +252,7 @@
 
     // Load menu items
     async function loadMenuItems() {
-        const res = await fetch('/admin/menu');
+        const res = await fetch(`/r/${slug}/admin/menu`);
         const items = await res.json();
         const list = document.getElementById('menu-list');
         if (items.length === 0) {
@@ -287,7 +288,7 @@
             return;
         }
 
-        const res = await fetch(`/admin/menu/add?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`, {
+        const res = await fetch(`/r/${slug}/admin/menu/add?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`, {
             method: 'POST'
         });
 
@@ -314,7 +315,7 @@
         }
     
         const res = await fetch(
-            `/admin/menu/edit/${itemId}?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`,
+            `/r/${slug}/admin/menu/edit/${itemId}?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&price=${price}`,
             { method: 'POST' }
         );
         if (res.ok) {
