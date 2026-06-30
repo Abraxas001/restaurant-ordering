@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Login</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .logo { text-align: center; font-size: 48px; margin-bottom: 12px; }
+        h1 { text-align: center; color: #9d4edd; font-size: 24px; margin-bottom: 6px; }
+        p { text-align: center; color: #888; font-size: 14px; margin-bottom: 28px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+        .field input {
+            width: 100%; padding: 12px 16px; background: #0f3460;
+            border: 2px solid #0f3460; border-radius: 10px; color: #eee;
+            font-size: 15px; outline: none; transition: border-color 0.2s;
+        }
+        .field input:focus { border-color: #9d4edd; }
+        .btn-login {
+            width: 100%; background: #9d4edd; color: white; border: none;
+            padding: 14px; border-radius: 10px; font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-top: 8px; transition: background 0.2s;
+        }
+        .btn-login:hover { background: #7b2cbf; }
+        .error {
+            background: #e74c3c22; border: 1px solid #e74c3c; color: #e74c3c;
+            padding: 10px 16px; border-radius: 8px; font-size: 14px;
+            margin-bottom: 16px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">👑</div>
+    <h1>Super Admin</h1>
+    <p>Master Control Panel</p>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/superadmin/login">
+        <div class="field">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter username" required autofocus>
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter password" required>
+        </div>
+        <button type="submit" class="btn-login">Login →</button>
+    </form>
+</div>
+</body>
+</html>
