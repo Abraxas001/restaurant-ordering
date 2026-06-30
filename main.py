@@ -43,9 +43,9 @@ def run_migrations():
         existing_restaurant = db.query(Restaurant).first()
         if not existing_restaurant:
             default_restaurant = Restaurant(
-                name="My Restaurant",
-                slug="my-restaurant",
-                username="admin",
+                name="NIRVANA",
+                slug="nirvana",
+                username="cafe_admin",
                 password=ADMIN_PASSWORD  # reuse your existing admin password
             )
             db.add(default_restaurant)
