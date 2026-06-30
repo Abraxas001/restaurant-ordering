@@ -112,19 +112,37 @@ def get_menu(db: Session = Depends(get_db)):
     items = db.query(MenuItem).all()
     return items
 
-# Landing page — collect name and phone
-@app.get("/table/{table_number}")
-def table_landing(table_number: int, request: Request):
+@app.get("/r/{slug}/table/{table_number}")
+def table_landing(slug: str, table_number: int, request: Request, db: Session = Depends(get_db)):
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if not restaurant:
+        return {"error": "Restaurant not found"}
+
     return templates.TemplateResponse(
         request=request,
         name="landing.html",
-        context={"table_number": table_number}
+        context={
+            "table_number": table_number,
+            "slug": slug,
+            "restaurant_name": restaurant.name
+        }
     )
 
-# Menu page — after name and phone submitted
-@app.get("/menu/{table_number}")
-def table_menu(table_number: int, name: str, phone: str, request: Request, db: Session = Depends(get_db)):
-    items = db.query(MenuItem).all()
+@app.get("/r/{slug}/menu/{table_number}")
+def table_menu(
+    slug: str,
+    table_number: int,
+    name: str,
+    phone: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if not restaurant:
+        return {"error": "Restaurant not found"}
+
+    items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).all()
+
     return templates.TemplateResponse(
         request=request,
         name="menu.html",
@@ -132,7 +150,9 @@ def table_menu(table_number: int, name: str, phone: str, request: Request, db: S
             "items": items,
             "table_number": table_number,
             "customer_name": name,
-            "customer_phone": phone
+            "customer_phone": phone,
+            "slug": slug,
+            "restaurant_name": restaurant.name
         }
     )
 
