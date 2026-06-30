@@ -1,7 +1,7 @@
 import qrcode
 
 YOUR_URL = "https://restaurant-ordering-q8te.onrender.com"
-RESTAURANT_SLUG = "my-restaurant"  # matches the slug created in Stage 1
+RESTAURANT_SLUG = "nirvana"  # matches the slug created in Stage 1
 NUM_TABLES = 10
 
 for i in range(1, NUM_TABLES + 1):
