@@ -95,7 +95,7 @@
 <div id="menu-page">
     <div class="header">
         <div class="header-top">
-            <h1>🍽️ Our Menu</h1>
+            <h1>🍽️ {{ restaurant_name }}</h1>
             <span class="table-tag">Table {{ table_number }}</span>
         </div>
 
@@ -313,8 +313,9 @@
         for (const [id, qty] of Object.entries(cart)) {
             if (qty > 0) { itemIds.push(id); quantities.push(qty); }
         }
+        const slug = "{{ slug }}";
         const res = await fetch(
-            `/order?table_number=${tableNumber}&item_ids=${itemIds.join(",")}&quantities=${quantities.join(",")}&customer_name=${encodeURIComponent(customerName)}&customer_phone=${encodeURIComponent(customerPhone)}`,
+            `/r/${slug}/order?table_number=${tableNumber}&item_ids=${itemIds.join(",")}&quantities=${quantities.join(",")}&customer_name=${encodeURIComponent(customerName)}&customer_phone=${encodeURIComponent(customerPhone)}`,
             { method: "POST" }
         );
         if (res.ok) {
