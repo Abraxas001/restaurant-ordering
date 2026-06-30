@@ -19,6 +19,107 @@ Base.metadata.create_all(bind=engine)
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
+SUPERADMIN_USERNAME = os.environ.get("SUPERADMIN_USERNAME", "superadmin")
+SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD", "super123")
+
+superadmin_sessions = set()
+
+def create_superadmin_session():
+    token = secrets.token_hex(32)
+    superadmin_sessions.add(token)
+    return token
+
+def is_valid_superadmin_session(token: str) -> bool:
+    return token in superadmin_sessions
+
+@app.get("/superadmin/login")
+def superadmin_login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="superadmin_login.html",
+        context={"error": None}
+    )
+
+@app.post("/superadmin/login")
+def superadmin_login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    if username == SUPERADMIN_USERNAME and password == SUPERADMIN_PASSWORD:
+        token = create_superadmin_session()
+        response = RedirectResponse(url="/superadmin", status_code=302)
+        response.set_cookie(key="superadmin_token", value=token, httponly=True, path="/superadmin")
+        return response
+    return templates.TemplateResponse(
+        request=request,
+        name="superadmin_login.html",
+        context={"error": "Invalid credentials"}
+    )
+
+@app.get("/superadmin/logout")
+def superadmin_logout(superadmin_token: Optional[str] = Cookie(None)):
+    if superadmin_token in superadmin_sessions:
+        superadmin_sessions.discard(superadmin_token)
+    response = RedirectResponse(url="/superadmin/login", status_code=302)
+    response.delete_cookie("superadmin_token", path="/superadmin")
+    return response
+
+@app.get("/superadmin")
+def superadmin_dashboard(
+    request: Request,
+    superadmin_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    if not superadmin_token or not is_valid_superadmin_session(superadmin_token):
+        return RedirectResponse(url="/superadmin/login", status_code=302)
+
+    restaurants = db.query(Restaurant).order_by(Restaurant.created_at.desc()).all()
+
+    restaurant_stats = []
+    for r in restaurants:
+        total_orders = db.query(Order).filter(Order.restaurant_id == r.id).count()
+        today_orders = db.query(Order).filter(
+            Order.restaurant_id == r.id,
+            Order.created_at >= datetime.combine(date.today(), datetime.min.time())
+        ).count()
+        menu_count = db.query(MenuItem).filter(MenuItem.restaurant_id == r.id).count()
+
+        restaurant_stats.append({
+            "restaurant": r,
+            "total_orders": total_orders,
+            "today_orders": today_orders,
+            "menu_count": menu_count
+        })
+
+    return templates.TemplateResponse(
+        request=request,
+        name="superadmin.html",
+        context={"restaurant_stats": restaurant_stats}
+    )
+
+@app.post("/superadmin/add-restaurant")
+def add_restaurant(
+    name: str = Form(...),
+    slug: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    superadmin_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    if not superadmin_token or not is_valid_superadmin_session(superadmin_token):
+        return RedirectResponse(url="/superadmin/login", status_code=302)
+
+    existing = db.query(Restaurant).filter(Restaurant.slug == slug).first()
+    if existing:
+        return RedirectResponse(url="/superadmin?error=slug_exists", status_code=302)
+
+    restaurant = Restaurant(name=name, slug=slug, username=username, password=password)
+    db.add(restaurant)
+    db.commit()
+
+    return RedirectResponse(url="/superadmin", status_code=302)
+
 # Migrate: add missing columns if they don't exist
 from sqlalchemy import text
 
