@@ -76,7 +76,7 @@
     <div class="error">{{ error }}</div>
     {% endif %}
 
-    <form method="POST" action="/admin/login">
+    <form method="POST" action="/r/{{ slug }}/admin/login">
         <div class="field">
             <label>Username</label>
             <input type="text" name="username" placeholder="Enter username" required autofocus>
