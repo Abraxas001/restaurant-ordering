@@ -140,7 +140,7 @@
 
             <div class="order-card {{ status_lower }}">
                 <div class="order-header">
-                    <span class="order-id">Order #{{ order.id }}</span>
+                    <span class="order-id">Order #{{ order.restaurant_order_number or order.id }}</span>
                     <span class="table-badge">Table {{ order.table_number }}</span>
                 </div>
                 <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
