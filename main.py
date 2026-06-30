@@ -16,6 +16,9 @@ print("DATABASE URL:", os.environ.get("TURSO_URL", "NOT FOUND"))
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+
 # Migrate: add missing columns if they don't exist
 from sqlalchemy import text
 
