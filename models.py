@@ -23,6 +23,7 @@ class Order(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True)
     restaurant_id = Column(Integer, ForeignKey("restaurants.id"))
+    restaurant_order_number = Column(Integer)  # per-restaurant order number
     table_number = Column(Integer)
     status = Column(String, default="New")
     created_at = Column(DateTime, default=datetime.utcnow)
