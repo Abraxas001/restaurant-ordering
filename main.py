@@ -42,6 +42,13 @@ def run_migrations():
         except Exception:
             db.rollback()
 
+        try:
+            db.execute(text("ALTER TABLE orders ADD COLUMN restaurant_order_number INTEGER"))
+            db.commit()
+            print("Added restaurant_order_number to orders")
+        except Exception:
+            db.rollback()
+
         # Step 3: Create a default restaurant for existing data (only if none exists)
         existing_restaurant = db.query(Restaurant).first()
         if not existing_restaurant:
@@ -166,8 +173,16 @@ def place_order(
     if not restaurant:
         return {"error": "Restaurant not found"}
 
+    # Calculate next order number for this restaurant
+    last_order = db.query(Order).filter(
+        Order.restaurant_id == restaurant.id
+    ).order_by(Order.restaurant_order_number.desc()).first()
+
+    next_order_number = (last_order.restaurant_order_number + 1) if last_order and last_order.restaurant_order_number else 1
+
     order = Order(
         restaurant_id=restaurant.id,
+        restaurant_order_number=next_order_number,
         table_number=table_number,
         status="New",
         customer_name=customer_name,
@@ -189,7 +204,7 @@ def place_order(
         db.add(order_item)
 
     db.commit()
-    return {"message": "Order placed!", "order_id": order.id}
+    return {"message": "Order placed!", "order_id": order.id, "order_number": next_order_number}
 
 @app.get("/orders")
 def get_orders(db: Session = Depends(get_db)):
