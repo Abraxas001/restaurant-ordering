@@ -349,7 +349,12 @@ def login(
     if restaurant:
         token = create_session(restaurant.id)
         response = RedirectResponse(url=f"/r/{slug}/admin", status_code=302)
-        response.set_cookie(key="admin_token", value=token, httponly=True)
+        response.set_cookie(
+            key="admin_token",
+            value=token,
+            httponly=True,
+            path=f"/r/{slug}"
+        )
         return response
 
     return templates.TemplateResponse(
@@ -363,6 +368,6 @@ def logout(slug: str, admin_token: Optional[str] = Cookie(None)):
     if admin_token in active_sessions:
         del active_sessions[admin_token]
     response = RedirectResponse(url=f"/r/{slug}/admin/login", status_code=302)
-    response.delete_cookie("admin_token")
+    response.delete_cookie("admin_token", path=f"/r/{slug}")
     return response
 
