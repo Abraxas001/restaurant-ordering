@@ -10,8 +10,15 @@ from fastapi import Form, Cookie
 from typing import Optional
 import hashlib
 import secrets
+from passlib.context import CryptContext
 
-print("DATABASE URL:", os.environ.get("TURSO_URL", "NOT FOUND"))
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -46,10 +53,15 @@ def superadmin_login(
     username: str = Form(...),
     password: str = Form(...)
 ):
-    if username == SUPERADMIN_USERNAME and password == SUPERADMIN_PASSWORD:
+    if username == SUPERADMIN_USERNAME and verify_password(password, SUPERADMIN_PASSWORD):
         token = create_superadmin_session()
         response = RedirectResponse(url="/superadmin", status_code=302)
-        response.set_cookie(key="superadmin_token", value=token, httponly=True, path="/superadmin")
+        response.set_cookie(
+            key="superadmin_token",
+            value=token,
+            httponly=True,
+            path="/superadmin"
+        )
         return response
     return templates.TemplateResponse(
         request=request,
@@ -114,11 +126,36 @@ def add_restaurant(
     if existing:
         return RedirectResponse(url="/superadmin?error=slug_exists", status_code=302)
 
-    restaurant = Restaurant(name=name, slug=slug, username=username, password=password)
+    restaurant = Restaurant(
+        name=name,
+        slug=slug,
+        username=username,
+        password=hash_password(password)  # hash before storing
+    )
     db.add(restaurant)
     db.commit()
 
     return RedirectResponse(url="/superadmin", status_code=302)
+
+@app.get("/superadmin/migrate-passwords")
+def migrate_passwords(
+    superadmin_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    if not superadmin_token or not is_valid_superadmin_session(superadmin_token):
+        return {"error": "Unauthorized"}
+
+    restaurants = db.query(Restaurant).all()
+    migrated = []
+
+    for r in restaurants:
+        # Only hash if not already hashed (bcrypt hashes start with $2b$)
+        if not r.password.startswith("$2b$"):
+            r.password = hash_password(r.password)
+            migrated.append(r.name)
+
+    db.commit()
+    return {"message": "Passwords migrated", "migrated": migrated}
 
 # Migrate: add missing columns if they don't exist
 from sqlalchemy import text
@@ -440,12 +477,34 @@ def get_menu_items(slug: str, db: Session = Depends(get_db)):
     items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).all()
     return items
 
-@app.get("/r/{slug}/admin/login")
-def login_page(slug: str, request: Request):
+@app.post("/r/{slug}/admin/login")
+def login(
+    slug: str,
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    restaurant = db.query(Restaurant).filter(
+        Restaurant.slug == slug,
+        Restaurant.username == username,
+    ).first()
+
+    if restaurant and verify_password(password, restaurant.password):
+        token = create_session(restaurant.id)
+        response = RedirectResponse(url=f"/r/{slug}/admin", status_code=302)
+        response.set_cookie(
+            key="admin_token",
+            value=token,
+            httponly=True,
+            path=f"/r/{slug}"
+        )
+        return response
+
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"error": None, "slug": slug}
+        context={"error": "Invalid username or password", "slug": slug}
     )
 
 @app.post("/r/{slug}/admin/login")
