@@ -520,7 +520,15 @@ def get_menu_items(slug: str, db: Session = Depends(get_db)):
     items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).all()
     return items
 
-@app.post("/r/{slug}/admin/login")
+@app.get("/r/{slug}/admin/login")   # shows the login page
+def login_page(slug: str, request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"error": None, "slug": slug}
+    )
+
+@app.post("/r/{slug}/admin/login")   # handles form submission
 def login(
     slug: str,
     request: Request,
