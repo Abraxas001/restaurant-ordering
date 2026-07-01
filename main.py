@@ -52,7 +52,26 @@ def superadmin_login(
     username: str = Form(...),
     password: str = Form(...)
 ):
-    if username == SUPERADMIN_USERNAME and verify_password(password, SUPERADMIN_PASSWORD):
+    # Check username first
+    if username != SUPERADMIN_USERNAME:
+        return templates.TemplateResponse(
+            request=request,
+            name="superadmin_login.html",
+            context={"error": "Invalid credentials"}
+        )
+
+    # Check password — handle plain text and hashed
+    password_valid = False
+    try:
+        if SUPERADMIN_PASSWORD.startswith("$argon2") or SUPERADMIN_PASSWORD.startswith("$2b$"):
+            password_valid = verify_password(password, SUPERADMIN_PASSWORD)
+        else:
+            # Plain text comparison for now
+            password_valid = (password == SUPERADMIN_PASSWORD)
+    except Exception:
+        password_valid = (password == SUPERADMIN_PASSWORD)
+
+    if password_valid:
         token = create_superadmin_session()
         response = RedirectResponse(url="/superadmin", status_code=302)
         response.set_cookie(
@@ -62,6 +81,7 @@ def superadmin_login(
             path="/superadmin"
         )
         return response
+
     return templates.TemplateResponse(
         request=request,
         name="superadmin_login.html",
@@ -493,38 +513,17 @@ def login(
         Restaurant.username == username,
     ).first()
 
-    if restaurant and verify_password(password, restaurant.password):
-        token = create_session(restaurant.id)
-        response = RedirectResponse(url=f"/r/{slug}/admin", status_code=302)
-        response.set_cookie(
-            key="admin_token",
-            value=token,
-            httponly=True,
-            path=f"/r/{slug}"
-        )
-        return response
-
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html",
-        context={"error": "Invalid username or password", "slug": slug}
-    )
-
-@app.post("/r/{slug}/admin/login")
-def login(
-    slug: str,
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    restaurant = db.query(Restaurant).filter(
-        Restaurant.slug == slug,
-        Restaurant.username == username,
-        Restaurant.password == password
-    ).first()
-
+    password_valid = False
     if restaurant:
+        try:
+            if restaurant.password.startswith("$argon2") or restaurant.password.startswith("$2b$"):
+                password_valid = verify_password(password, restaurant.password)
+            else:
+                password_valid = (password == restaurant.password)
+        except Exception:
+            password_valid = (password == restaurant.password)
+
+    if restaurant and password_valid:
         token = create_session(restaurant.id)
         response = RedirectResponse(url=f"/r/{slug}/admin", status_code=302)
         response.set_cookie(
