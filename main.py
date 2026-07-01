@@ -28,11 +28,24 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 SUPERADMIN_USERNAME = os.environ.get("SUPERADMIN_USERNAME", "superadmin")
 SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD", "super123")
 
-@app.get("/debug-superadmin")
-def debug_superadmin():
+@app.get("/debug-login")
+def debug_login(username: str, password: str):
+    username_match = (username == SUPERADMIN_USERNAME)
+    
+    password_valid = False
+    try:
+        if SUPERADMIN_PASSWORD.startswith("$argon2") or SUPERADMIN_PASSWORD.startswith("$2b$"):
+            password_valid = verify_password(password, SUPERADMIN_PASSWORD)
+        else:
+            password_valid = (password == SUPERADMIN_PASSWORD)
+    except Exception as e:
+        return {"error": str(e), "username_match": username_match}
+    
     return {
-        "username": SUPERADMIN_USERNAME,
-        "password_preview": SUPERADMIN_PASSWORD[:6] + "..."
+        "username_match": username_match,
+        "password_valid": password_valid,
+        "stored_username": SUPERADMIN_USERNAME,
+        "password_starts_with": SUPERADMIN_PASSWORD[:10]
     }
 
 superadmin_sessions = set()
