@@ -157,6 +157,10 @@ def migrate_passwords(
     db.commit()
     return {"message": "Passwords migrated", "migrated": migrated}
 
+@app.get("/generate-hash")
+def generate_hash(password: str):
+    return {"hash": hash_password(password)}
+
 # Migrate: add missing columns if they don't exist
 from sqlalchemy import text
 
