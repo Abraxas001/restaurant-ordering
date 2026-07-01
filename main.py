@@ -28,6 +28,13 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 SUPERADMIN_USERNAME = os.environ.get("SUPERADMIN_USERNAME", "superadmin")
 SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD", "super123")
 
+@app.get("/debug-superadmin")
+def debug_superadmin():
+    return {
+        "username": SUPERADMIN_USERNAME,
+        "password_preview": SUPERADMIN_PASSWORD[:6] + "..."
+    }
+
 superadmin_sessions = set()
 
 def create_superadmin_session():
